@@ -11,9 +11,9 @@ steps:
   - uses: actions/checkout@v1
   - uses: harehare/elm-action@v1
     with:
-      elm_analyse_version: "0.16.5"
-      ignore_error: "error"
-      working_directory: "elm"
+      elm_analyse_version: 0.16.5
+      ignore_error: false
+      working_directory: elm
 ```
 
 ![img](/assets/img/elm-analyse-action.png)

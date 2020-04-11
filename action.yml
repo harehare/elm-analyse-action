@@ -1,0 +1,20 @@
+name: "elm-analyse-action"
+description: "This action elm-analyse for use in actions."
+inputs:
+  elm_analyse_version:
+    description: "elm analyse version"
+    required: false
+    default: "0.16.5"
+  working_directory:
+    description: "working directory"
+    required: false
+  ignore_error:
+    description: "ignore error"
+    required: true
+    default: "false"
+runs:
+  using: "node12"
+  main: "dist/index.js"
+branding:
+  color: "blue"
+  icon: "check"

@@ -117,3 +117,6 @@ web_modules/
 sample
 elm-stuff
 elm/*
+
+*.js.map
+.envrc

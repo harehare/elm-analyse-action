@@ -1,6 +1,6 @@
 {
   "name": "elm-analyse-action",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "This action elm-analyse for use in actions.",
   "scripts": {
     "dev": "webpack --mode development --watch",

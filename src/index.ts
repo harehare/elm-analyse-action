@@ -3,11 +3,18 @@ import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 import * as io from "@actions/io";
 import { issueCommand } from "@actions/core/lib/command";
-import { Either, parseJSON, left, right, either } from "fp-ts/lib/Either";
+import {
+  Either,
+  isLeft,
+  parseJSON,
+  left,
+  right,
+  either,
+} from "fp-ts/lib/Either";
 import { ElmAnalyse } from "./elm-analyse";
 
 const elmAnalyseVersion = core.getInput("elm_analyse_version", {
-  required: true
+  required: true,
 });
 const ignoreError = core.getInput("ignore_error") === "true";
 const workingDirectory = core.getInput("working_directory") || process.cwd();
@@ -25,7 +32,7 @@ const npmInit = async (npmPath: string) => {
     core.debug(`Nod Found package.json`);
     await exec.exec(npmPath, ["init", "-y"], {
       silent: true,
-      cwd: workingDirectory
+      cwd: workingDirectory,
     });
   } else {
     core.debug(`Found package.json`);
@@ -40,7 +47,7 @@ const installPackage = async (
   core.debug(`Installing ${packageName}`);
   await exec.exec(npmPath, ["i", "-D", `${packageName}@${version}`], {
     silent: true,
-    cwd: workingDirectory
+    cwd: workingDirectory,
   });
 };
 
@@ -60,29 +67,37 @@ const execNpx: (
       },
       stderr: (data: Buffer) => {
         errorOutput += data.toString();
-      }
+      },
     },
     silent: true,
-    cwd: workingDirectory
+    cwd: workingDirectory,
   };
   const npx = await io.which("npx", true);
-  await exec.exec(npx, [command].concat(args), options).catch(e => e);
+  await exec.exec(npx, [command].concat(args), options).catch((e) => e);
 
   if (errorOutput) {
     return left(errorOutput);
   }
-  return right(output.slice(output.indexOf("{")));
+
+  return right(output.replace("\n", ""));
 };
 
 const runAnalyse = async () => {
   core.debug(`Run analyse`);
   const commandResult = await execNpx("elm-analyse", ["--format", "json"]);
-  const analyseJson = either.chain(commandResult, output => {
-    return parseJSON(output, e => e);
+  const analyseJson = either.chain(commandResult, (output) => {
+    return parseJSON(output, (e) => e);
   }) as Either<string, ElmAnalyse>;
 
-  const result = either.chain(analyseJson, report => {
-    const issues = report.messages.map(message => {
+  if (isLeft(analyseJson)) {
+    either.map(commandResult, (e) => {
+      core.setFailed(e);
+    });
+    return;
+  }
+
+  const result = either.chain(analyseJson, (report) => {
+    const issues = report.messages.map((message) => {
       issueCommand(
         "warning",
         {
@@ -90,7 +105,7 @@ const runAnalyse = async () => {
             ? `${workingDirectory}/${message.file}`
             : message.file,
           line: message.data.properties.range[0].toString(),
-          col: message.data.properties.range[1].toString()
+          col: message.data.properties.range[1].toString(),
         },
         message.data.description
       );
@@ -102,7 +117,7 @@ const runAnalyse = async () => {
     return right(true);
   });
 
-  either.mapLeft(result, e => {
+  either.mapLeft(result, (e) => {
     core.setFailed(e);
   });
 };

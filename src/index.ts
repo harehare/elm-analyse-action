@@ -78,8 +78,13 @@ const execNpx: (
   if (errorOutput) {
     return left(errorOutput);
   }
+  const startIndex = output.indexOf("{");
 
-  return right(output.replace("\n", ""));
+  if (startIndex === -1) {
+    return left(output);
+  }
+
+  return right(output.substring(startIndex).replace("\n", ""));
 };
 
 const runAnalyse = async () => {
@@ -88,13 +93,6 @@ const runAnalyse = async () => {
   const analyseJson = either.chain(commandResult, (output) => {
     return parseJSON(output, (e) => e);
   }) as Either<string, ElmAnalyse>;
-
-  if (isLeft(analyseJson)) {
-    either.map(commandResult, (e) => {
-      core.setFailed(e);
-    });
-    return;
-  }
 
   const result = either.chain(analyseJson, (report) => {
     const issues = report.messages.map((message) => {
